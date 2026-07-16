@@ -1,0 +1,17 @@
+meta {
+  name: 1 - Consultar inexistente (404)
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/invoices/00000000-0000-0000-0000-000000000000
+  body: none
+  auth: none
+}
+
+docs {
+  Id sintático válido mas inexistente no banco.
+
+  Esperado: 404 Not Found.
+}

@@ -1,0 +1,17 @@
+meta {
+  name: 2 - Consultar duplicata
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/invoices/{{invoiceId}}
+  body: none
+  auth: none
+}
+
+docs {
+  Busca a duplicata criada na requisição anterior (`invoiceId`).
+
+  Esperado: 200 OK, status ISSUED.
+}

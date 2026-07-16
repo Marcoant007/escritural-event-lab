@@ -1,0 +1,44 @@
+meta {
+  name: 1 - Emitir duplicata
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/invoices
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+script:pre-request {
+  bru.setVar("uniqueNumber", "INV-" + Date.now());
+}
+
+body:json {
+  {
+    "number": "{{uniqueNumber}}",
+    "issuerDocument": "12345678901",
+    "payerDocument": "10987654321",
+    "amount": 150.75,
+    "issueDate": "2026-07-16",
+    "dueDate": "2026-08-15"
+  }
+}
+
+vars:post-response {
+  invoiceId: res.body.id
+}
+
+docs {
+  Cria uma duplicata nova (status ISSUED). Gera um `number` único a cada
+  execução via pre-request script, pra poder rodar essa collection várias
+  vezes sem cair em 409 de número duplicado. Guarda o `id` retornado na
+  variável de runtime `invoiceId`, usada pelas próximas requisições deste
+  fluxo.
+
+  Esperado: 201 Created.
+}

@@ -1,0 +1,34 @@
+meta {
+  name: 2a - Emitir numero fixo
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/invoices
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "number": "BRUNO-FIXO-001",
+    "issuerDocument": "12345678901",
+    "payerDocument": "10987654321",
+    "amount": 50.00,
+    "issueDate": "2026-07-16",
+    "dueDate": "2026-08-15"
+  }
+}
+
+docs {
+  Número fixo (não gerado dinamicamente) de propósito, pra "2b" poder
+  colidir com ele.
+
+  Esperado: 201 na primeira vez que rodar. Se já tiver rodado antes nesse
+  banco, também dá 409 aqui mesmo — tudo bem, é só rodar "2b" direto.
+}

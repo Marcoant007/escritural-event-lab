@@ -1,0 +1,17 @@
+meta {
+  name: 2 - Apresentar duplicata
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/invoices/{{invoiceId}}/presentation
+  body: none
+  auth: none
+}
+
+docs {
+  Transição ISSUED -> PRESENTED (pré-requisito pra poder recusar).
+
+  Esperado: 200 OK, status PRESENTED.
+}

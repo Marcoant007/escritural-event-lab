@@ -1,0 +1,18 @@
+meta {
+  name: 3b - Aceitar sem apresentar (409)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/invoices/{{invoiceId}}/acceptance
+  body: none
+  auth: none
+}
+
+docs {
+  Chama aceitação direto numa duplicata que ainda está ISSUED (pulando a
+  apresentação). Depende de rodar "3a" logo antes.
+
+  Esperado: 409 Conflict (transição inválida).
+}

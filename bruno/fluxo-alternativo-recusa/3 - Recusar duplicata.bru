@@ -1,0 +1,17 @@
+meta {
+  name: 3 - Recusar duplicata
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/invoices/{{invoiceId}}/rejection
+  body: none
+  auth: none
+}
+
+docs {
+  Transição PRESENTED -> REJECTED.
+
+  Esperado: 200 OK, status REJECTED.
+}

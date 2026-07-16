@@ -1,0 +1,18 @@
+meta {
+  name: 4 - Aceitar duplicata
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/invoices/{{invoiceId}}/acceptance
+  body: none
+  auth: none
+}
+
+docs {
+  Transição PRESENTED -> ACCEPTED.
+
+  Esperado: 200 OK, status ACCEPTED. Publica InvoiceAccepted no tópico
+  Kafka duplicata-events (confira no Kafka UI em http://localhost:8090).
+}

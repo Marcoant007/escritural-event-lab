@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "escritural-event-lab",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

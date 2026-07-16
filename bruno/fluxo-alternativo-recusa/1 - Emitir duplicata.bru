@@ -1,0 +1,41 @@
+meta {
+  name: 1 - Emitir duplicata
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/invoices
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+script:pre-request {
+  bru.setVar("uniqueNumber", "INV-REJ-" + Date.now());
+}
+
+body:json {
+  {
+    "number": "{{uniqueNumber}}",
+    "issuerDocument": "12345678901",
+    "payerDocument": "10987654321",
+    "amount": 90.00,
+    "issueDate": "2026-07-16",
+    "dueDate": "2026-08-15"
+  }
+}
+
+vars:post-response {
+  invoiceId: res.body.id
+}
+
+docs {
+  Emite uma duplicata separada só pra esse fluxo, pra não conflitar com o
+  invoiceId usado em "fluxo-feliz".
+
+  Esperado: 201 Created.
+}
