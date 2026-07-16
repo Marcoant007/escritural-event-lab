@@ -87,7 +87,9 @@ Objetivos:
 - tópico;
 - chave por duplicata;
 - consumer group;
-- threads bloqueantes.
+- threads bloqueantes;
+- dead-letter queue (DLQ);
+- parking lot para eventos não processáveis.
 
 Critérios:
 
@@ -95,6 +97,8 @@ Critérios:
 - [ ] consumidor recebe;
 - [ ] ordem por duplicata é preservável;
 - [ ] falha não é ignorada;
+- [ ] falha de processamento é desviada para uma DLQ, sem perder a mensagem;
+- [ ] parking lot isola eventos problemáticos sem bloquear o consumo dos demais;
 - [ ] testes de integração passam.
 
 ## Fase 5 — Pagamento e idempotência

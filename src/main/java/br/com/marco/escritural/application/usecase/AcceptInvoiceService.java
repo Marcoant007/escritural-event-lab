@@ -2,6 +2,7 @@ package br.com.marco.escritural.application.usecase;
 
 import br.com.marco.escritural.application.exception.InvoiceNotFoundException;
 import br.com.marco.escritural.application.ports.in.AcceptInvoiceUseCase;
+import br.com.marco.escritural.application.ports.out.InvoiceEventPublisherPort;
 import br.com.marco.escritural.application.ports.out.InvoiceHistoryRepositoryPort;
 import br.com.marco.escritural.application.ports.out.InvoiceRepositoryPort;
 import br.com.marco.escritural.domain.event.InvoiceAccepted;
@@ -17,6 +18,7 @@ import java.util.UUID;
 public class AcceptInvoiceService implements AcceptInvoiceUseCase {
     private final InvoiceRepositoryPort repository;
     private final InvoiceHistoryRepositoryPort historyRepository;
+    private final InvoiceEventPublisherPort eventPublisher;
 
     @Override
     @Transactional
@@ -26,6 +28,7 @@ public class AcceptInvoiceService implements AcceptInvoiceUseCase {
         InvoiceAccepted event = invoice.accept();
         Invoice saved = repository.save(invoice);
         historyRepository.save(event);
+        eventPublisher.publish(event);
         return saved;
     }
 }

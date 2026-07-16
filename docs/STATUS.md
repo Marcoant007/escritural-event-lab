@@ -78,6 +78,50 @@ Cada evento carrega `eventId` (gerado pelo próprio método de transição no ag
 
 Os 4 critérios do roadmap estão marcados em `docs/ROADMAP.md`. `issue()` também gera histórico: `Invoice.issuedEvent()` empacota `id`/`createdAt` já existentes no agregado recém-criado num `InvoiceIssued`, e `IssueInvoiceService` salva invoice + histórico no mesmo `@Transactional`, igual às outras transições.
 
-## Depois da Fase 3
+## Fase 4 em andamento: Kafka de verdade
 
-Fase 4 do roadmap: Kafka de verdade (producer, consumer, tópico único `duplicata-events`, chave por `duplicataId`, consumer group, threads bloqueantes) — só começa depois da Fase 3 fechada, para não esconder domínio ainda instável atrás de infraestrutura de mensageria (`.claude/CLAUDE.md`).
+Objetivo da fase (`docs/ROADMAP.md`): sair do histórico interno (Fase 3, só no Postgres) para publicar os mesmos eventos de domínio num tópico Kafka de verdade, entendendo producer, consumer, ordenação por chave e tratamento de falha (incluindo DLQ e parking lot, adicionados ao escopo da fase depois da decisão de longo prazo do projeto).
+
+### O que já existe: producer de `issue()`
+
+Hoje, toda vez que uma duplicata é **emitida** (`POST /invoices`), além de salvar no banco e gravar o histórico (Fase 3), o sistema também publica uma mensagem no tópico Kafka `duplicata-events`. As outras transições (`present()`, `accept()`, `reject()`) ainda **não** publicam — só emissão, por enquanto.
+
+Fluxo, ponta a ponta:
+
+```text
+1. POST /invoices
+   -> IssueInvoiceService.execute(command)   [@Transactional]
+   a. Invoice.builder()...build()            -> cria o agregado em memória
+   b. invoice.issuedEvent()                  -> InvoiceIssued (evento de domínio, Java puro)
+   c. repository.save(invoice)               -> grava a invoice no Postgres
+   d. historyRepository.save(event)          -> grava uma linha em invoice_history (Fase 3)
+   e. invoiceEventPublisherPort.publish(event) -> publica no Kafka (Fase 4, novo)
+2. InvoiceEventPublisherAdapter monta o envelope e chama emitter.send(...)
+3. SmallRye Reactive Messaging serializa o envelope em JSON e manda pro tópico
+   duplicata-events, usando invoiceId como chave da mensagem.
+```
+
+Peças novas:
+
+- `application/ports/out/InvoiceEventPublisherPort.java` — porta de saída, `publish(InvoiceEvent)`. Mesmo desenho da `InvoiceHistoryRepositoryPort` da Fase 3.
+- `adapters/out/messaging/dto/InvoiceEventMessage.java` — o envelope que efetivamente trafega no Kafka: `eventId`, `eventType`, `eventVersion`, `aggregateId`, `occurredAt`, `correlationId`, `status`. Não é o mesmo objeto que `InvoiceEvent` do domínio — é a tradução desse evento pro formato de mensageria (mesma ideia de "DTO não é entidade de domínio", aplicada a eventos).
+- `adapters/out/messaging/InvoiceEventPublisherAdapter.java` — implementa a porta usando `@Channel("duplicata-events") Emitter<Record<String, InvoiceEventMessage>>`. `Record.of(invoiceId, message)` garante que a chave Kafka é sempre o `invoiceId` — isso é o que permite ordenar por duplicata (mensagens com a mesma chave sempre caem na mesma partição, na ordem em que foram enviadas).
+- `application.properties` — liga o canal lógico `duplicata-events` ao Kafka de verdade: `connector=smallrye-kafka`, tópico, serializer de chave (`StringSerializer`) e de valor (`ObjectMapperSerializer`, que serializa o envelope em JSON usando o `ObjectMapper` já gerenciado pelo Quarkus, o mesmo que a camada REST usa — por isso `Instant` funciona sem configuração extra).
+
+### Decisões tomadas nessa fatia
+
+- `eventType` não entra no domínio — é calculado no adapter (`event.getClass().getSimpleName()`), porque é um detalhe de formato de mensageria, não uma regra de negócio.
+- `correlationId` é gerado como um novo `UUID` a cada publicação, por enquanto — é um placeholder consciente até a Fase 8 trazer propagação real de correlation id a partir do request HTTP.
+- A publicação acontece dentro da mesma `@Transactional` do use case, logo depois do `historyRepository.save`. Isso é um dual-write consciente (se o commit falhar depois do `send`, a mensagem já foi pro Kafka mas o banco não gravou) — aceito por enquanto porque o roadmap já previa que outbox transacional é evolução posterior, não requisito da primeira publicação.
+- `kafka.bootstrap.servers` passou a ser `%dev.`-only (antes era global). Sem isso, os testes tentavam conectar no Kafka do `docker-compose` (que pode nem estar de pé) em vez de deixar o Dev Services do Quarkus subir um Kafka efêmero pra cada execução de teste — mesmo ajuste que já existia pro Postgres.
+
+### Como foi testado
+
+`IssueInvoiceServiceTest` (`application/usecase`, `@QuarkusTest`) emite uma invoice e usa o **Kafka Companion** (`io.quarkus:quarkus-test-kafka-companion`, dependência de teste nova) pra consumir do tópico `duplicata-events` e confirmar: a mensagem chegou, com a chave certa (`invoiceId`), e o corpo (deserializado de volta pra `InvoiceEventMessage`) tem os campos esperados. A classe de teste precisa da anotação `@QuarkusTestResource(KafkaCompanionResource.class)` — sem ela, o Quarkus nunca ativa o mecanismo que injeta o `KafkaCompanion` no teste (é um resource opt-in, não automático). Suite completa (`mvnw test`, Docker Desktop rodando) passou depois dessa mudança, incluindo os testes que já existiam e que agora, de carona, também publicam eventos de emissão sem quebrar.
+
+### O que ainda falta pra fechar a Fase 4
+
+- `present()`, `accept()`, `reject()` ainda não publicam no Kafka (só `issue()`).
+- Nenhum consumer existe ainda — ninguém lê o tópico `duplicata-events` de verdade (só o teste, via companion).
+- Ordem por duplicata está garantida pela chave, mas ainda não foi exercitada com múltiplas mensagens da mesma invoice em sequência.
+- DLQ e parking lot (critérios adicionados ao roadmap) ainda não têm nenhuma peça implementada.

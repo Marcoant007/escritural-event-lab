@@ -3,6 +3,7 @@ package br.com.marco.escritural.application.usecase;
 import br.com.marco.escritural.application.dto.input.IssueInvoiceCommand;
 import br.com.marco.escritural.application.exception.DuplicateInvoiceException;
 import br.com.marco.escritural.application.ports.in.IssueInvoiceUseCase;
+import br.com.marco.escritural.application.ports.out.InvoiceEventPublisherPort;
 import br.com.marco.escritural.application.ports.out.InvoiceHistoryRepositoryPort;
 import br.com.marco.escritural.application.ports.out.InvoiceRepositoryPort;
 import br.com.marco.escritural.domain.event.InvoiceIssued;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 public class IssueInvoiceService implements IssueInvoiceUseCase {
     private final InvoiceRepositoryPort repository;
     private final InvoiceHistoryRepositoryPort historyRepository;
+    private final InvoiceEventPublisherPort eventPublisher;
 
     @Override
     @Transactional
@@ -34,6 +36,7 @@ public class IssueInvoiceService implements IssueInvoiceUseCase {
         InvoiceIssued event = invoice.issuedEvent();
         Invoice saved = repository.save(invoice);
         historyRepository.save(event);
+        eventPublisher.publish(event);
         return saved;
     }
 }
