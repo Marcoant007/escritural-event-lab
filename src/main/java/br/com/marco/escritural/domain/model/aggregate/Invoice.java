@@ -1,5 +1,9 @@
 package br.com.marco.escritural.domain.model.aggregate;
 
+import br.com.marco.escritural.domain.event.InvoiceAccepted;
+import br.com.marco.escritural.domain.event.InvoiceIssued;
+import br.com.marco.escritural.domain.event.InvoicePresented;
+import br.com.marco.escritural.domain.event.InvoiceRejected;
 import br.com.marco.escritural.domain.exception.BusinessRuleException;
 import br.com.marco.escritural.domain.exception.InvalidStatusTransitionException;
 import br.com.marco.escritural.domain.model.enums.InvoiceStatus;
@@ -56,9 +60,24 @@ public final class Invoice {
                 dueDate, status, createdAt, updatedAt);
     }
 
-    public void present() { transitionFrom(InvoiceStatus.ISSUED, InvoiceStatus.PRESENTED); }
-    public void accept() { transitionFrom(InvoiceStatus.PRESENTED, InvoiceStatus.ACCEPTED); }
-    public void reject() { transitionFrom(InvoiceStatus.PRESENTED, InvoiceStatus.REJECTED); }
+    public InvoiceIssued issuedEvent() {
+        return new InvoiceIssued(UUID.randomUUID(), id, createdAt);
+    }
+
+    public InvoicePresented present() {
+        transitionFrom(InvoiceStatus.ISSUED, InvoiceStatus.PRESENTED);
+        return new InvoicePresented(UUID.randomUUID(), id, updatedAt);
+    }
+
+    public InvoiceAccepted accept() {
+        transitionFrom(InvoiceStatus.PRESENTED, InvoiceStatus.ACCEPTED);
+        return new InvoiceAccepted(UUID.randomUUID(), id, updatedAt);
+    }
+
+    public InvoiceRejected reject() {
+        transitionFrom(InvoiceStatus.PRESENTED, InvoiceStatus.REJECTED);
+        return new InvoiceRejected(UUID.randomUUID(), id, updatedAt);
+    }
 
     private void transitionFrom(InvoiceStatus expected, InvoiceStatus target) {
         if (status != expected) {

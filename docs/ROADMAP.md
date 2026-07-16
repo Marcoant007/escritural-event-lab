@@ -72,10 +72,10 @@ Objetivos:
 
 Critérios:
 
-- [ ] eventos possuem id e instante;
-- [ ] histórico é persistido;
-- [ ] emissão e transição geram histórico;
-- [ ] transação garante consistência.
+- [x] eventos possuem id e instante;
+- [x] histórico é persistido;
+- [x] emissão e transição geram histórico;
+- [x] transação garante consistência.
 
 ## Fase 4 — Kafka e notificação simulada
 

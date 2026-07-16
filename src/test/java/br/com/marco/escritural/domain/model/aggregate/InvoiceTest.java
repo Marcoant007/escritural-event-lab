@@ -1,5 +1,9 @@
 package br.com.marco.escritural.domain.model.aggregate;
 
+import br.com.marco.escritural.domain.event.InvoiceAccepted;
+import br.com.marco.escritural.domain.event.InvoiceIssued;
+import br.com.marco.escritural.domain.event.InvoicePresented;
+import br.com.marco.escritural.domain.event.InvoiceRejected;
 import br.com.marco.escritural.domain.exception.BusinessRuleException;
 import br.com.marco.escritural.domain.exception.InvalidStatusTransitionException;
 import br.com.marco.escritural.domain.model.enums.InvoiceStatus;
@@ -16,6 +20,16 @@ class InvoiceTest {
         Invoice invoice = validInvoice();
         assertNotNull(invoice.getId());
         assertEquals(InvoiceStatus.ISSUED, invoice.getStatus());
+    }
+
+    @Test
+    void shouldReturnDomainEventWhenIssuing() {
+        Invoice invoice = validInvoice();
+        InvoiceIssued event = invoice.issuedEvent();
+        assertNotNull(event.eventId());
+        assertEquals(invoice.getId(), event.invoiceId());
+        assertEquals(invoice.getCreatedAt(), event.occurredAt());
+        assertEquals(InvoiceStatus.ISSUED, event.status());
     }
 
     @Test
@@ -45,6 +59,42 @@ class InvoiceTest {
         invoice.present();
         invoice.reject();
         assertEquals(InvoiceStatus.REJECTED, invoice.getStatus());
+    }
+
+    @Test
+    void shouldReturnDomainEventWhenPresenting() {
+        Invoice invoice = validInvoice();
+        InvoicePresented event = invoice.present();
+        assertNotNull(event.eventId());
+        assertEquals(invoice.getId(), event.invoiceId());
+        assertEquals(invoice.getUpdatedAt(), event.occurredAt());
+    }
+
+    @Test
+    void shouldGenerateDifferentEventIdsForDifferentPresentations() {
+        InvoicePresented first = validInvoice().present();
+        InvoicePresented second = validInvoice().present();
+        assertNotEquals(first.eventId(), second.eventId());
+    }
+
+    @Test
+    void shouldReturnDomainEventWhenAccepting() {
+        Invoice invoice = validInvoice();
+        invoice.present();
+        InvoiceAccepted event = invoice.accept();
+        assertNotNull(event.eventId());
+        assertEquals(invoice.getId(), event.invoiceId());
+        assertEquals(InvoiceStatus.ACCEPTED, event.status());
+    }
+
+    @Test
+    void shouldReturnDomainEventWhenRejecting() {
+        Invoice invoice = validInvoice();
+        invoice.present();
+        InvoiceRejected event = invoice.reject();
+        assertNotNull(event.eventId());
+        assertEquals(invoice.getId(), event.invoiceId());
+        assertEquals(InvoiceStatus.REJECTED, event.status());
     }
 
     @Test
