@@ -93,11 +93,11 @@ Objetivos:
 
 Critérios:
 
-- [ ] evento é publicado;
-- [ ] consumidor recebe;
+- [x] evento é publicado;
+- [x] consumidor recebe;
 - [ ] ordem por duplicata é preservável;
-- [ ] falha não é ignorada;
-- [ ] falha de processamento é desviada para uma DLQ, sem perder a mensagem;
+- [x] falha não é ignorada;
+- [x] falha de processamento é desviada para uma DLQ, sem perder a mensagem;
 - [ ] parking lot isola eventos problemáticos sem bloquear o consumo dos demais;
 - [ ] testes de integração passam.
 
