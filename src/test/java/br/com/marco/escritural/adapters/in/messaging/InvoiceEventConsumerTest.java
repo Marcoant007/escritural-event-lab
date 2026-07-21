@@ -83,6 +83,34 @@ class InvoiceEventConsumerTest {
                 .orElseThrow(() -> new AssertionError("Nenhuma mensagem chegou na DLQ pra " + aggregateId));
     }
 
+    @Test
+    void shouldKeepProcessingSubsequentEventsWhenAnEarlierOneIsParked() throws JsonProcessingException {
+        UUID aggregateId = UUID.randomUUID();
+        InvoiceEventMessage malformedMessage = new InvoiceEventMessage(
+                UUID.randomUUID(),
+                "InvoiceIssued",
+                1,
+                aggregateId,
+                Instant.now(),
+                UUID.randomUUID(),
+                "BOGUS_STATUS"
+        );
+        String json = objectMapper.writeValueAsString(malformedMessage);
+
+        companion.produceStrings().fromRecords(
+                KafkaCompanion.record("duplicata-events", aggregateId.toString(), json)
+        );
+
+        Invoice invoice = issueInvoice.execute(validCommand());
+        await().atMost(Duration.ofSeconds(10))
+                .untilAsserted(() -> assertTrue(receivedFor(invoice.getId()).isPresent()));
+
+        NotifyInvoiceEventCommand command = receivedFor(invoice.getId()).orElseThrow();
+        assertEquals(InvoiceStatus.ISSUED, command.invoiceStatus());
+        assertNotNull(command.occurredAt());
+
+    }
+
     private Optional<NotifyInvoiceEventCommand> receivedFor(UUID invoiceId) {
         return notifyFake.received().stream()
                 .filter(command -> command.invoiceId().equals(invoiceId))
