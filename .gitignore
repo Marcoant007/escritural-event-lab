@@ -28,6 +28,9 @@ nb-configuration.xml
 # OSX
 .DS_Store
 
+# IBM MQ JMS client trace logs
+mqjms.log*
+
 # Vim
 *.swp
 *.swo

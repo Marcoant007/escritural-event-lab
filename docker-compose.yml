@@ -19,6 +19,21 @@ services:
       retries: 10
       start_period: 10s
 
+  ibmmq:
+    image: icr.io/ibm-messaging/mq:9.4.5.1-r1
+    container_name: escritural-event-lab-ibmmq
+    restart: unless-stopped
+    environment:
+      LICENSE: accept
+      MQ_QMGR_NAME: QM1
+      MQ_APP_PASSWORD: passw0rd
+      MQ_ADMIN_PASSWORD: admin123
+    ports:
+      - "1414:1414"
+      - "9443:9443"
+    volumes:
+      - ibmmq_data:/mnt/mqm
+
   kafka:
     image: confluentinc/cp-kafka:8.3.0
     hostname: kafka
@@ -78,3 +93,6 @@ volumes:
 
   kafka_data:
     name: escritural-event-lab-kafka-data
+
+  ibmmq_data:
+    name: escritural-event-lab-ibmmq-data
