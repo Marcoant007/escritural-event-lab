@@ -11,7 +11,7 @@ public class HubRoute extends RouteBuilder {
     public void configure() throws Exception {
         HubEventBus hubEventBus = CDI.current().select(HubEventBus.class).get();
 
-        from("kafka:hub.in?brokers={{kafka.bootstrap.servers}}")
+        from("kafka:hub-in?brokers={{kafka.bootstrap.servers}}")
                 .routeId("hub-in-to-out")
                 .log("Hub recebeu do Kafka: ${body}")
                 .process(exchange -> hubEventBus.publish("KAFKA", "RECEBIDO", exchange.getIn().getBody(String.class)))
@@ -21,6 +21,6 @@ public class HubRoute extends RouteBuilder {
                 })
                 .marshal().json()
                 .process(exchange -> hubEventBus.publish("KAFKA", "PUBLICADO_HUB_OUT", exchange.getIn().getBody(String.class)))
-                .to("kafka:hub.out?brokers={{kafka.bootstrap.servers}}");
+                .to("kafka:hub-out?brokers={{kafka.bootstrap.servers}}");
     }
 }

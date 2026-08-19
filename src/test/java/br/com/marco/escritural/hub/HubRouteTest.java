@@ -33,11 +33,11 @@ class HubRouteTest {
         String payload = "mensagem de teste";
 
         companion.produceStrings().fromRecords(
-                KafkaCompanion.record("hub.in", key, payload)
+                KafkaCompanion.record("hub-in", key, payload)
         );
 
         ConsumerTask<String, String> records = companion.consumeStrings()
-                .fromTopics("hub.out", Duration.ofSeconds(5))
+                .fromTopics("hub-out", Duration.ofSeconds(5))
                 .awaitCompletion(Duration.ofSeconds(15));
 
         List<ConsumerRecord<String, String>> matching = records.getRecords().stream()

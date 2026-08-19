@@ -37,7 +37,7 @@ public class HubDebugResource {
             case "BANCO_A_KAFKA" ->
                     producerTemplate.sendBody("kafka:duplicata-recebida?brokers={{kafka.bootstrap.servers}}", request.message());
             default ->
-                    producerTemplate.sendBody("kafka:hub.in?brokers={{kafka.bootstrap.servers}}", request.message());
+                    producerTemplate.sendBody("kafka:hub-in?brokers={{kafka.bootstrap.servers}}", request.message());
         }
     }
 

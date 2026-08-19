@@ -21,6 +21,6 @@ public class IbmMqProbeRoute extends RouteBuilder {
                 })
                 .marshal().json()
                 .process(exchange -> hubEventBus.publish("IBM_MQ", "PUBLICADO_HUB_OUT", exchange.getIn().getBody(String.class)))
-                .to("kafka:hub.out?brokers={{kafka.bootstrap.servers}}");
+                .to("kafka:hub-out?brokers={{kafka.bootstrap.servers}}");
     }
 }

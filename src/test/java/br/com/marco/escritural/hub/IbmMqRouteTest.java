@@ -38,7 +38,7 @@ class IbmMqRouteTest {
         producerTemplate.sendBody("jms:queue:DEV.QUEUE.1?connectionFactory=#ibmMqConnectionFactory", payload);
 
         ConsumerTask<String, String> records = companion.consumeStrings()
-                .fromTopics("hub.out", Duration.ofSeconds(10))
+                .fromTopics("hub-out", Duration.ofSeconds(10))
                 .awaitCompletion(Duration.ofSeconds(30));
 
         List<HubMessage> matching = records.getRecords().stream()

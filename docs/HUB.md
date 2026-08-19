@@ -14,7 +14,7 @@ roadmap do domínio de duplicata.
 ## Escopo decidido (2026-08-17)
 
 - **Hub genérico, desacoplado do domínio Invoice.** Tópicos e filas próprios do hub
-  (`hub.in`, `hub.out`), payload próprio do hub — não reaproveita `InvoiceEventMessage` nem o
+  (`hub-in`, `hub-out`), payload próprio do hub — não reaproveita `InvoiceEventMessage` nem o
   tópico `duplicata-events`. A ideia é praticar roteamento/EIP puro, como em um hub real que não
   conhece o schema de quem produz ou consome.
 - **Mesma aplicação Quarkus.** Sem módulo Maven separado. Consistente com a decisão "monólito
@@ -45,9 +45,9 @@ tocar em IBM MQ ainda.
 Critérios:
 
 - [x] extensão `camel-quarkus-kafka` adicionada via `quarkus:add-extension`;
-- [x] uma `RouteBuilder` consome de `hub.in` e produz em `hub.out`;
-- [x] teste de integração cobre o fluxo `hub.in -> hub.out`;
-- [ ] mensagem publicada manualmente (Kafka UI) chega transformada em `hub.out` (opcional, o teste automatizado já cobriu o fluxo).
+- [x] uma `RouteBuilder` consome de `hub-in` e produz em `hub-out`;
+- [x] teste de integração cobre o fluxo `hub-in -> hub-out`;
+- [ ] mensagem publicada manualmente (Kafka UI) chega transformada em `hub-out` (opcional, o teste automatizado já cobriu o fluxo).
 
 ### Fase H2 — IBM MQ no Docker + conexão JMS validada
 
@@ -68,14 +68,14 @@ precisar mesmo de um teste de integração.
 
 ### Fase H3 — Rota IBM MQ → Kafka (o hub de fato)
 
-Objetivo: duas entradas (Kafka `hub.in` e IBM MQ `DEV.QUEUE.1`) convergindo para uma única saída
-Kafka (`hub.out`), com alguma transformação/normalização no meio — este é o comportamento que dá
+Objetivo: duas entradas (Kafka `hub-in` e IBM MQ `DEV.QUEUE.1`) convergindo para uma única saída
+Kafka (`hub-out`), com alguma transformação/normalização no meio — este é o comportamento que dá
 nome ao "hub".
 
 Critérios:
 
-- [x] mensagem publicada no Kafka chega normalizada em `hub.out` (`HubRouteTest`, automatizado);
-- [x] mensagem publicada no IBM MQ chega normalizada em `hub.out` (validado na mão: `amqsput` + Kafka UI);
+- [x] mensagem publicada no Kafka chega normalizada em `hub-out` (`HubRouteTest`, automatizado);
+- [x] mensagem publicada no IBM MQ chega normalizada em `hub-out` (validado na mão: `amqsput` + Kafka UI);
 - [x] formato de saída é único, independente da origem — envelope `HubMessage(source, payload, receivedAt)`;
 - [x] teste de integração cobre o lado Kafka (`HubRouteTest`) e o lado IBM MQ
   (`IbmMqRouteTest`, via `IbmMqTestResource` — Testcontainers sobe um IBM MQ descartável antes da
@@ -96,7 +96,7 @@ banco e encaminhando via IBM MQ pro outro. É a direção oposta das rotas H1-H3
 o Kafka) — aqui o Kafka é entrada e o IBM MQ é saída.
 
 - **`BankForwardRoute`**: `from("kafka:duplicata-recebida?...")` → `to("jms:queue:DEV.QUEUE.2?...")`.
-  Tópico e fila **diferentes** dos usados em H1-H3 de propósito: `duplicata-recebida` não é `hub.in`
+  Tópico e fila **diferentes** dos usados em H1-H3 de propósito: `duplicata-recebida` não é `hub-in`
   (não deve se misturar com o fluxo de normalização do hub), e `DEV.QUEUE.2` não é `DEV.QUEUE.1`
   (que já tem o `IbmMqProbeRoute` consumindo — publicar ali criaria um auto-consumo dentro do mesmo
   processo).
